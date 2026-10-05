@@ -1,0 +1,34 @@
+name: build-windows-x64
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download TeamSpeak 3 Plugin SDK
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri 'https://files.teamspeak-services.com/releases/sdk/3.1.1/ts3_sdk_3.1.1.0_2022-06-20.zip' -OutFile sdk.zip
+          Expand-Archive sdk.zip sdk
+          Get-ChildItem sdk -Recurse | Select-Object FullName
+      - name: Find headers and compile bridge
+        shell: cmd
+        run: |
+          for /r sdk %%F in (ts3_functions.h) do set HDR=%%~dpF
+          echo Header directory: %HDR%
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cl /nologo /LD /O2 /EHsc /I"%HDR%" plugin.c /Fe:TS3ExternalOverlayBridge_win64.dll
+      - name: Package
+        shell: powershell
+        run: |
+          @' 
+          Set s=CreateObject("WScript.Shell")
+          s.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & Replace(WScript.ScriptFullName,"INICIAR OVERLAY.vbs","overlay.ps1") & """",0,False
+          '@ | Set-Content INICIAR` OVERLAY.vbs
+          New-Item package -ItemType Directory
+          Copy-Item TS3ExternalOverlayBridge_win64.dll,overlay.ps1,'INICIAR OVERLAY.vbs' package
+          '1) Copia TS3ExternalOverlayBridge_win64.dll a %APPDATA%\TS3Client\plugins\`n2) Reinicia TeamSpeak y habilita TS3 External Overlay Bridge.`n3) Ejecuta INICIAR OVERLAY.vbs.`n4) Deshabilita el TSNotifier original para que no se dibuje dentro de GTA.' | Set-Content package\LEEME.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TS3-External-Overlay
+          path: package
