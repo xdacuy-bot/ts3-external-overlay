@@ -13,7 +13,7 @@ jobs:
         run: |
           for /f "usebackq tokens=*" %%I in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VS=%%I
           call "%VS%\VC\Auxiliary\Build\vcvars64.bat"
-          cl /nologo /LD /O2 /I"sdk\include" plugin.c /Fe:TS3ExternalOverlayBridge_win64.dll
+          cl /nologo /LD /O2 /I"sdk\include" plugin_v11.c /Fe:TS3ExternalOverlayBridge_win64.dll
       - name: Package
         shell: powershell
         run: |
@@ -25,12 +25,12 @@ jobs:
           New-Item package -ItemType Directory -Force | Out-Null
           Copy-Item TS3ExternalOverlayBridge_win64.dll,overlay.ps1,'INICIAR OVERLAY.vbs' package
           @'
-          1) Copia TS3ExternalOverlayBridge_win64.dll a %APPDATA%\TS3Client\plugins\
-          2) Reinicia TeamSpeak 3 y habilita TS3 External Overlay Bridge.
+          VERSION 1.1
+          1) Reemplaza TS3ExternalOverlayBridge_win64.dll en %APPDATA%\TS3Client\plugins\
+          2) Reinicia TeamSpeak 3.
           3) Ejecuta INICIAR OVERLAY.vbs.
-          4) Deshabilita el overlay/plugin viejo para evitar duplicados.
           '@ | Set-Content package\LEEME.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: TS3-External-Overlay
+          name: TS3-External-Overlay-v1.1
           path: package
