@@ -16,11 +16,10 @@ $dir=Join-Path $env:APPDATA 'TS3ExternalOverlay';New-Item -ItemType Directory -F
 $key=[Drawing.Color]::FromArgb(1,2,3);$w=245;$screen=[Windows.Forms.Screen]::PrimaryScreen.Bounds
 $form=New-Object Windows.Forms.Form;$form.FormBorderStyle='None';$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.StartPosition='Manual';$form.Location=New-Object Drawing.Point(($screen.Right-$w-8),8);$form.Size=New-Object Drawing.Size($w,360);$form.BackColor=$key;$form.TransparencyKey=$key
 $panel=New-Object Windows.Forms.FlowLayoutPanel;$panel.FlowDirection='TopDown';$panel.WrapContents=$false;$panel.AutoSize=$true;$panel.BackColor=$key;$panel.Padding=New-Object Windows.Forms.Padding(0);$panel.Margin=New-Object Windows.Forms.Padding(0);$form.Controls.Add($panel)
-# Heavier, slightly larger native Windows text to approach TSNotifier visibility at distance.
-# Still no outline/path rendering: preserve Windows font hinting/antialiasing.
 $fUser=New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
 $fChan=New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
-$idle=[Drawing.Color]::FromArgb(255,255,255);$talking=[Drawing.Color]::FromArgb(112,196,242);$muted=[Drawing.Color]::FromArgb(235,65,65);$channelColor=[Drawing.Color]::FromArgb(20,20,24)
+# Softer TSNotifier-like palette: neutral white, pale cyan-blue, muted coral red.
+$idle=[Drawing.Color]::FromArgb(245,245,245);$talking=[Drawing.Color]::FromArgb(105,170,205);$muted=[Drawing.Color]::FromArgb(205,88,88);$channelColor=[Drawing.Color]::FromArgb(28,28,31)
 function Row($text,$color,$channel){
  $p=New-Object Windows.Forms.Panel;$p.Width=241;$p.Height=20;$p.BackColor=$key;$p.Margin=New-Object Windows.Forms.Padding(0)
  $l=New-Object Windows.Forms.Label;$l.AutoSize=$false;$l.Size=New-Object Drawing.Size(239,20);$l.Location=New-Object Drawing.Point(0,0);$l.Text=$text;$l.Font=$(if($channel){$fChan}else{$fUser});$l.ForeColor=$color;$l.BackColor=$key;$l.TextAlign='MiddleLeft';$l.UseCompatibleTextRendering=$false;$l.Margin=New-Object Windows.Forms.Padding(0);$l.Padding=New-Object Windows.Forms.Padding(0);$p.Controls.Add($l);return $p
