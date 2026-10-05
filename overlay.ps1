@@ -16,13 +16,14 @@ $dir=Join-Path $env:APPDATA 'TS3ExternalOverlay';New-Item -ItemType Directory -F
 $key=[Drawing.Color]::FromArgb(1,2,3);$w=245;$screen=[Windows.Forms.Screen]::PrimaryScreen.Bounds
 $form=New-Object Windows.Forms.Form;$form.FormBorderStyle='None';$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.StartPosition='Manual';$form.Location=New-Object Drawing.Point(($screen.Right-$w-8),8);$form.Size=New-Object Drawing.Size($w,360);$form.BackColor=$key;$form.TransparencyKey=$key
 $panel=New-Object Windows.Forms.FlowLayoutPanel;$panel.FlowDirection='TopDown';$panel.WrapContents=$false;$panel.AutoSize=$true;$panel.BackColor=$key;$panel.Padding=New-Object Windows.Forms.Padding(0);$panel.Margin=New-Object Windows.Forms.Padding(0);$form.Controls.Add($panel)
-$fUser=New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
-$fChan=New-Object Drawing.Font('Segoe UI',10,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
-# Softer TSNotifier-like palette: neutral white, pale cyan-blue, muted coral red.
-$idle=[Drawing.Color]::FromArgb(245,245,245);$talking=[Drawing.Color]::FromArgb(105,170,205);$muted=[Drawing.Color]::FromArgb(205,88,88);$channelColor=[Drawing.Color]::FromArgb(28,28,31)
+# Compact, heavy native text: closer to TSNotifier proportions without artificial outlines.
+$fUser=New-Object Drawing.Font('Arial',9.25,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
+$fChan=New-Object Drawing.Font('Arial',9.25,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
+# Neutral TSNotifier-style status palette.
+$idle=[Drawing.Color]::FromArgb(242,239,235);$talking=[Drawing.Color]::FromArgb(105,159,190);$muted=[Drawing.Color]::FromArgb(196,92,92);$channelColor=[Drawing.Color]::FromArgb(82,82,86)
 function Row($text,$color,$channel){
- $p=New-Object Windows.Forms.Panel;$p.Width=241;$p.Height=20;$p.BackColor=$key;$p.Margin=New-Object Windows.Forms.Padding(0)
- $l=New-Object Windows.Forms.Label;$l.AutoSize=$false;$l.Size=New-Object Drawing.Size(239,20);$l.Location=New-Object Drawing.Point(0,0);$l.Text=$text;$l.Font=$(if($channel){$fChan}else{$fUser});$l.ForeColor=$color;$l.BackColor=$key;$l.TextAlign='MiddleLeft';$l.UseCompatibleTextRendering=$false;$l.Margin=New-Object Windows.Forms.Padding(0);$l.Padding=New-Object Windows.Forms.Padding(0);$p.Controls.Add($l);return $p
+ $p=New-Object Windows.Forms.Panel;$p.Width=241;$p.Height=17;$p.BackColor=$key;$p.Margin=New-Object Windows.Forms.Padding(0)
+ $l=New-Object Windows.Forms.Label;$l.AutoSize=$false;$l.Size=New-Object Drawing.Size(239,17);$l.Location=New-Object Drawing.Point(0,0);$l.Text=$text;$l.Font=$(if($channel){$fChan}else{$fUser});$l.ForeColor=$color;$l.BackColor=$key;$l.TextAlign='MiddleLeft';$l.UseCompatibleTextRendering=$false;$l.Margin=New-Object Windows.Forms.Padding(0);$l.Padding=New-Object Windows.Forms.Padding(0);$p.Controls.Add($l);return $p
 }
 $form.Add_Shown({$e=[OWin]::GetWindowLong($form.Handle,[OWin]::GWL_EXSTYLE);[OWin]::SetWindowLong($form.Handle,[OWin]::GWL_EXSTYLE,$e-bor[OWin]::WS_EX_TRANSPARENT-bor[OWin]::WS_EX_TOOLWINDOW-bor[OWin]::WS_EX_NOACTIVATE)|Out-Null;[OWin]::SetWindowDisplayAffinity($form.Handle,[OWin]::WDA_EXCLUDEFROMCAPTURE)|Out-Null})
 $t=New-Object Windows.Forms.Timer;$t.Interval=80;$t.Add_Tick({try{$lines=@(Get-Content $file -Encoding UTF8 -ErrorAction Stop);$sig=$lines-join[char]31;if($sig-ne$script:last){$script:last=$sig;$panel.SuspendLayout();$panel.Controls.Clear();foreach($line in $lines){$v=$line-split"`t",4;if($v[0]-eq'CHANNEL'){$panel.Controls.Add((Row $v[1] $channelColor $true))}elseif($v[0]-eq'USER'){$talk=$v[1]-eq'1';$mute=$v[2]-eq'1';$c=if($mute){$muted}elseif($talk){$talking}else{$idle};$panel.Controls.Add((Row $v[3] $c $false))}}$panel.ResumeLayout();$panel.Visible=$lines.Count-gt0}}catch{$panel.Visible=$false}});$t.Start();[Windows.Forms.Application]::Run($form)
