@@ -14,6 +14,18 @@ jobs:
           for /f "usebackq tokens=*" %%I in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VS=%%I
           call "%VS%\VC\Auxiliary\Build\vcvars64.bat"
           cl /nologo /LD /O2 /I"sdk\include" plugin_v11.c /Fe:TS3ExternalOverlayBridge_win64.dll
+      - name: Validate overlay PowerShell syntax and CSharp
+        shell: powershell
+        run: |
+          $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\overlay.ps1'),[ref]$null,[ref]$errors)
+          if($errors.Count){$errors | Format-List -Force; exit 1}
+          $src=Get-Content '.\overlay.ps1' -Raw
+          $m=[regex]::Match($src,'Add-Type @"\r?\n(?<cs>.*?)\r?\n"@',[Text.RegularExpressions.RegexOptions]::Singleline)
+          if(-not $m.Success){throw 'Embedded C# block not found'}
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          Add-Type -TypeDefinition $m.Groups['cs'].Value -ReferencedAssemblies System.Windows.Forms,System.Drawing
       - name: Package
         shell: powershell
         run: |
@@ -22,15 +34,21 @@ jobs:
           p=Replace(WScript.ScriptFullName,"INICIAR OVERLAY.vbs","overlay.ps1")
           s.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & p & """",0,False
           '@ | Set-Content 'INICIAR OVERLAY.vbs'
-          New-Item package -ItemType Directory -Force | Out-Null
-          Copy-Item TS3ExternalOverlayBridge_win64.dll,overlay.ps1,'INICIAR OVERLAY.vbs' package
           @'
-          VERSION 1.1
-          1) Reemplaza TS3ExternalOverlayBridge_win64.dll en %APPDATA%\TS3Client\plugins\
-          2) Reinicia TeamSpeak 3.
-          3) Ejecuta INICIAR OVERLAY.vbs.
+          @echo off
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0overlay.ps1"
+          echo.
+          echo Si hubo un error, copia o envia el texto de esta ventana.
+          pause
+          '@ | Set-Content 'DIAGNOSTICO OVERLAY.bat'
+          New-Item package -ItemType Directory -Force | Out-Null
+          Copy-Item TS3ExternalOverlayBridge_win64.dll,overlay.ps1,'INICIAR OVERLAY.vbs','DIAGNOSTICO OVERLAY.bat' package
+          @'
+          VERSION 1.3 DIAGNOSTIC
+          Ejecuta INICIAR OVERLAY.vbs normalmente.
+          Si no aparece, ejecuta DIAGNOSTICO OVERLAY.bat y envia el error mostrado.
           '@ | Set-Content package\LEEME.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: TS3-External-Overlay-v1.1
+          name: TS3-External-Overlay-v1.3-diagnostic
           path: package
