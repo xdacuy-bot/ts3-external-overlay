@@ -21,11 +21,11 @@ jobs:
           [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\overlay.ps1'),[ref]$null,[ref]$errors)
           if($errors.Count){$errors | Format-List -Force; exit 1}
           $src=Get-Content '.\overlay.ps1' -Raw
-          $m=[regex]::Match($src,'Add-Type @"\r?\n(?<cs>.*?)\r?\n"@',[Text.RegularExpressions.RegexOptions]::Singleline)
+          $m=[regex]::Match($src,'\$cs\s*=\s*@"\r?\n(?<cs>.*?)\r?\n"@',[Text.RegularExpressions.RegexOptions]::Singleline)
           if(-not $m.Success){throw 'Embedded C# block not found'}
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
-          Add-Type -TypeDefinition $m.Groups['cs'].Value -ReferencedAssemblies System.Windows.Forms,System.Drawing
+          Add-Type -TypeDefinition $m.Groups['cs'].Value -ReferencedAssemblies @('System.Windows.Forms.dll','System.Drawing.dll')
       - name: Package
         shell: powershell
         run: |
