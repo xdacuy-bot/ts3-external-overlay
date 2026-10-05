@@ -16,11 +16,14 @@ $dir=Join-Path $env:APPDATA 'TS3ExternalOverlay';New-Item -ItemType Directory -F
 $key=[Drawing.Color]::FromArgb(1,2,3);$w=245;$screen=[Windows.Forms.Screen]::PrimaryScreen.Bounds
 $form=New-Object Windows.Forms.Form;$form.FormBorderStyle='None';$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.StartPosition='Manual';$form.Location=New-Object Drawing.Point(($screen.Right-$w-8),8);$form.Size=New-Object Drawing.Size($w,360);$form.BackColor=$key;$form.TransparencyKey=$key
 $panel=New-Object Windows.Forms.FlowLayoutPanel;$panel.FlowDirection='TopDown';$panel.WrapContents=$false;$panel.AutoSize=$true;$panel.BackColor=$key;$panel.Padding=New-Object Windows.Forms.Padding(0);$panel.Margin=New-Object Windows.Forms.Padding(0);$form.Controls.Add($panel)
-# Compact, heavy native text: closer to TSNotifier proportions without artificial outlines.
-$fUser=New-Object Drawing.Font('Arial',9.25,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
-$fChan=New-Object Drawing.Font('Arial',9.25,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Point)
-# Neutral TSNotifier-style status palette.
-$idle=[Drawing.Color]::FromArgb(242,239,235);$talking=[Drawing.Color]::FromArgb(105,159,190);$muted=[Drawing.Color]::FromArgb(196,92,92);$channelColor=[Drawing.Color]::FromArgb(82,82,86)
+# TSNotifier's supplied hw_overlay.ini explicitly uses Tahoma, size 15.
+# Use pixel units here because the original overlay setting is a raw size value,
+# avoiding the much larger result that 15pt would produce in WinForms.
+$fUser=New-Object Drawing.Font('Tahoma',15,[Drawing.FontStyle]::Regular,[Drawing.GraphicsUnit]::Pixel)
+$fChan=New-Object Drawing.Font('Tahoma',15,[Drawing.FontStyle]::Regular,[Drawing.GraphicsUnit]::Pixel)
+# Neutral palette tuned from the visual TSNotifier comparison; the supplied legacy
+# TSNotifier.ini color values do not match the currently displayed TSNotifier palette.
+$idle=[Drawing.Color]::FromArgb(235,232,228);$talking=[Drawing.Color]::FromArgb(104,158,188);$muted=[Drawing.Color]::FromArgb(190,96,96);$channelColor=[Drawing.Color]::FromArgb(72,72,76)
 function Row($text,$color,$channel){
  $p=New-Object Windows.Forms.Panel;$p.Width=241;$p.Height=17;$p.BackColor=$key;$p.Margin=New-Object Windows.Forms.Padding(0)
  $l=New-Object Windows.Forms.Label;$l.AutoSize=$false;$l.Size=New-Object Drawing.Size(239,17);$l.Location=New-Object Drawing.Point(0,0);$l.Text=$text;$l.Font=$(if($channel){$fChan}else{$fUser});$l.ForeColor=$color;$l.BackColor=$key;$l.TextAlign='MiddleLeft';$l.UseCompatibleTextRendering=$false;$l.Margin=New-Object Windows.Forms.Padding(0);$l.Padding=New-Object Windows.Forms.Padding(0);$p.Controls.Add($l);return $p
